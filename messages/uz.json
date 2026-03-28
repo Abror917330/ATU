@@ -1,0 +1,92 @@
+{
+  "nav": {
+    "home": "Asosiy",
+    "creative": "Ijod",
+    "shop": "Do'kon",
+    "uzgen": "Uzgoniylar",
+    "courses": "Kurslar",
+    "profile": "Profil"
+  },
+  "auth": {
+    "login": "Kirish",
+    "register": "Ro'yxatdan o'tish",
+    "logout": "Chiqish",
+    "profile": "Profil",
+    "email": "Elektron manzil",
+    "password": "Parol",
+    "welcome": "Xush kelibsiz!"
+  },
+  "shop": {
+    "title": "Do'kon",
+    "products": "Mahsulotlar",
+    "cart": "Savat",
+    "checkout": "To'lov",
+    "price": "Narx",
+    "addCart": "Savatga qo'shish",
+    "removeCart": "Savatdan olib tashlash",
+    "total": "Jami",
+    "empty": "Savat bo'sh"
+  },
+  "sidebar": {
+    "menu": "Menyu",
+    "settings": "Sozlamalar",
+    "theme": "Tema",
+    "language": "Til",
+    "dark": "Qora",
+    "light": "Oq"
+  },
+  "home": {
+    "hero": "ATU Portal",
+    "subtitle": "O'zgan yoshlari uchun zamonaviy media platformasi",
+    "featured": "Tasniflanganlar"
+  },
+  "hero": {
+    "tagline": "Abdulloh Tohir Uzgoniy taqdim etadi",
+    "title1": "SO'Z VA",
+    "title2": "NAFOSAT",
+    "quote": "Har bir satrda bir dunyo, har bir libosda bir ma'no...",
+    "shopBtn": "Do'konni ko'rish",
+    "poemsBtn": "Yangi she'rlar"
+  },
+  "featuredCreative": {
+    "label": "Eksklyuziv",
+    "heading": "Yangi Ijod Namunasi",
+    "imageAlt": "ATU Creative",
+    "subtitle": "\"O'zganing tonglari...\"",
+    "poem": "Qadimiy shahrimning har bir toshida, Ajdodlar nafasi, siri bor go'yo. Oltin vodiyning nurli boshida, Yangi bir uyg'onish bo'larmi barpo?",
+    "buttonText": "To'liq o'qish"
+  },
+  "quickShop": {
+    "label": "Trenddagi",
+    "heading": "ATU SHOP",
+    "viewAll": "Barchasi",
+    "product1": "ATU 'Nafosat' Oversize",
+    "product2": "O'zganiy Hoodie v2",
+    "product3": "She'riyat To'plami",
+    "currency": "KGS"
+  },
+  "uzgoniylar": {
+    "talentCount": "50+",
+    "talentLabel": "Iqtidorli yoshlar",
+    "awardCount": "15+",
+    "awardLabel": "Yutuqlarimiz",
+    "mission": "Bizning maqsad",
+    "heading1": "O'zganing",
+    "heading2": "Yangi Avlodi",
+    "description": "Biz shunchaki jamoa emasmiz, biz — g'oya atrofida birlashgan yoshlarmiz. San'at, ilm va tadbirkorlik orqali shahrimiz rivojiga hissa qo'shamiz.",
+    "whatsappBtn": "WhatsApp-ga qo'shilish",
+    "viewTeam": "Jamoani ko'rish"
+  },
+  "footer": {
+    "brandName": "ATU Brand",
+    "brandDesc": "San'at, she'riyat va zamonaviy uslub birlashgan portal.",
+    "sections": "Bo'limlar",
+    "about": "Biz haqimizda",
+    "shipping": "Yetkazib berish",
+    "contact": "Bog'lanish",
+    "followUs": "Bizni kuzating",
+    "instagram": "Instagram",
+    "telegram": "Telegram",
+    "copyright": "ATU Portal. Barcha huquqlar himoyalangan."
+  }
+}
