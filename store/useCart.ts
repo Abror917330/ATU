@@ -1,13 +1,11 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-// Savatdagi mahsulot strukturasi
 interface CartItem {
     id: string;
     name: string;
     price: number;
-    image: string; // Savatda ko'rinadigan rasm
-    images?: string[]; // Admin paneldan keladigan rasmlar massivi
+    image: string;
     quantity: number;
     size?: string;
     color?: string;
@@ -32,72 +30,56 @@ export const useCart = create<CartStore>()(
             setIsOpen: (open) => set({ isOpen: open }),
 
             addItem: (product, size, color) => set((state) => {
-                // Rasm formatini to'g'irlash (massiv bo'lsa birinchisini olamiz)
                 const productImg = Array.isArray(product.images)
                     ? product.images[0]
-                    : (product.image || product.image_url || '');
+                    : (product.image || '');
 
-                // Bir xil ID, Size va Color bo'lgan mahsulotni qidiramiz
-                const existingItem = state.items.find(
-                    (item) =>
-                        item.id === product.id &&
-                        item.size === size &&
-                        item.color === color
+                const existing = state.items.find(
+                    i => i.id === product.id && i.size === size && i.color === color
                 );
 
-                if (existingItem) {
+                if (existing) {
                     return {
-                        items: state.items.map((item) =>
-                            item.id === product.id && item.size === size && item.color === color
-                                ? { ...item, quantity: item.quantity + 1 }
-                                : item
+                        items: state.items.map(i =>
+                            i.id === product.id && i.size === size && i.color === color
+                                ? { ...i, quantity: i.quantity + 1 }
+                                : i
                         ),
                     };
                 }
 
-                // Yangi mahsulot qo'shish
                 return {
-                    items: [
-                        ...state.items,
-                        {
-                            id: product.id,
-                            name: product.name,
-                            price: Number(product.price),
-                            image: productImg, // Rasm shu yerda saqlanadi
-                            quantity: 1,
-                            size,
-                            color,
-                        },
-                    ],
-                    isOpen: true, // Qo'shilganda savatni ochish
+                    items: [...state.items, {
+                        id: product.id,
+                        name: product.name,
+                        price: Number(product.price),
+                        image: productImg,
+                        quantity: 1,
+                        size,
+                        color,
+                    }],
+                    isOpen: true,
                 };
             }),
 
             removeItem: (id, size, color) => set((state) => ({
                 items: state.items.filter(
-                    (i) => !(i.id === id && i.size === size && i.color === color)
+                    i => !(i.id === id && i.size === size && i.color === color)
                 ),
             })),
 
             updateQuantity: (id, quantity, size, color) => set((state) => ({
                 items: state.items
-                    .map((item) =>
-                        item.id === id && item.size === size && item.color === color
-                            ? { ...item, quantity: Math.max(0, quantity) }
-                            : item
+                    .map(i => i.id === id && i.size === size && i.color === color
+                        ? { ...i, quantity: Math.max(0, quantity) }
+                        : i
                     )
-                    .filter((item) => item.quantity > 0),
+                    .filter(i => i.quantity > 0),
             })),
 
-            total: () => {
-                const { items } = get();
-                return items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-            },
-
+            total: () => get().items.reduce((acc, i) => acc + i.price * i.quantity, 0),
             clearCart: () => set({ items: [] }),
         }),
-        {
-            name: 'atu-cart-storage', // LocalStorage nomi
-        }
+        { name: 'atu-cart' }
     )
 );
