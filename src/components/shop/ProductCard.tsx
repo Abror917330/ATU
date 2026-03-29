@@ -18,7 +18,7 @@ export default function ProductCard({ product }: { product: any }) {
                     <div className="bg-white/70 dark:bg-black/70 backdrop-blur-md p-3 rounded-2xl flex justify-between items-center border border-white/20">
                         <span className="text-xs font-bold dark:text-white uppercase truncate mr-2">{product.name}</span>
                         <span className="text-xs font-black text-brand-gold whitespace-nowrap">
-                            {product.price.toLocaleString()} UZS
+                            {product.price.toLocaleString()} СОМ
                         </span>
                     </div>
                 </div>
