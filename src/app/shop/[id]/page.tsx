@@ -1,213 +1,112 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, ShoppingBag, Check, ChevronLeft, ChevronRight, MessageCircle, Heart, Loader2 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
-import { useCart } from '@/../store/useCart';
-import { useFavorites } from '@/../store/useFavorites';
+import { ShoppingBag, ShieldCheck, Loader2, ChevronLeft } from 'lucide-react';
+import Link from 'next/link';
 
-const formatPrice = (price: number) =>
-    new Intl.NumberFormat('ky-KG').format(price) + ' som';
-
-export default function ProductDetailPage() {
-    const { id } = useParams();
-    const router = useRouter();
-    const cart = useCart();
-    const { toggleShop, isShopFaved } = useFavorites();
-
-    const [product, setProduct] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
-    const [mounted, setMounted] = useState(false);
-    const [currentImage, setCurrentImage] = useState(0);
+export default function ProductDetail({ params, product: initialProduct }: any) {
     const [selectedSize, setSelectedSize] = useState('');
-    const [selectedColor, setSelectedColor] = useState('');
-    const [added, setAdded] = useState(false);
+    const [activeImg, setActiveImg] = useState(0);
+    const [product, setProduct] = useState(initialProduct);
 
-    useEffect(() => {
-        setMounted(true);
-        fetchProduct();
-    }, [id]);
-
-    const fetchProduct = async () => {
-        setLoading(true);
-        const { data, error } = await supabase
-            .from('products')
-            .select('*')
-            .eq('id', id)
-            .single();
-        if (!error && data) setProduct(data);
-        setLoading(false);
-    };
-
-    const faved = mounted && isShopFaved(id as string);
-
-    if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-main-bg">
-                <Loader2 className="animate-spin text-brand-gold" size={40} />
-            </div>
-        );
-    }
-
+    // Agar product prop orqali kelmasa (masalan, to'g'ridan-to'g'ri link bilan kirilsa)
+    // Bu yerda loading holati juda muhim
     if (!product) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-main-bg">
-                <div className="text-center">
-                    <p className="text-gray-400 mb-4 font-bold uppercase italic">Mahsulot topilmadi</p>
-                    <button
-                        onClick={() => router.push('/shop')}
-                        className="text-brand-gold font-black border-b-2 border-brand-gold pb-1"
-                    >
-                        ← DO'KONGA QAYTISH
-                    </button>
-                </div>
+            <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-black">
+                <Loader2 className="animate-spin text-brand-gold mb-4" size={40} />
+                <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">Yuklanmoqda...</p>
             </div>
         );
     }
 
-    const handleAddToCart = () => {
-        if (product.sizes?.length > 0 && !selectedSize) return;
-        if (product.colors?.length > 0 && !selectedColor) return;
-
-        cart.addItem({
-            id: product.id,
-            name: product.name,
-            price: product.price,
-            image: product.images?.[0] || '',
-            size: selectedSize || undefined,
-            color: selectedColor || undefined,
-            quantity: 1,
-        });
-        setAdded(true);
-        setTimeout(() => setAdded(false), 2000);
-        cart.setIsOpen(true);
-    };
-
-    const handleDirectWhatsApp = () => {
-        const msg = `Salom! ATU Shop dan so'rovim bor:\n\n` +
-            `*Mahsulot:* ${product.name}\n` +
-            `*Narx:* ${formatPrice(product.price)}\n` +
-            `${selectedSize ? `*Razmer:* ${selectedSize}\n` : ''}` +
-            `${selectedColor ? `*Rang:* ${selectedColor}\n` : ''}` +
-            `Havola: ${window.location.href}`;
-        window.open(`https://wa.me/996223555539?text=${encodeURIComponent(msg)}`, '_blank');
-    };
+    // Rasmlar xavfsizligini tekshiramiz
+    const images = product.images || [];
+    const hasImages = images.length > 0;
 
     return (
-        <main className="min-h-screen bg-main-bg pb-32 pt-6">
-            <div className="max-w-5xl mx-auto px-4">
-                <button
-                    onClick={() => router.back()}
-                    className="flex items-center gap-2 text-sm font-black text-gray-400 hover:text-brand-gold transition-all mb-8 uppercase italic"
-                >
-                    <ArrowLeft size={18} /> Orqaga
-                </button>
+        <div className="min-h-screen bg-white dark:bg-black">
+            <div className="max-w-7xl mx-auto px-6 py-12">
+                {/* Orqaga qaytish */}
+                <Link href="/shop" className="inline-flex items-center gap-2 text-gray-500 hover:text-brand-gold transition-colors mb-8 font-bold text-xs uppercase tracking-widest">
+                    <ChevronLeft size={16} /> Orqaga qaytish
+                </Link>
 
-                <div className="grid md:grid-cols-2 gap-12">
+                <div className="grid lg:grid-cols-2 gap-16">
 
-                    {/* RASMLAR */}
-                    <div className="space-y-4">
-                        <div className="relative aspect-square bg-white dark:bg-white/5 rounded-[2.5rem] overflow-hidden border border-gray-100 dark:border-white/10">
-                            {product.images?.[currentImage] ? (
+                    {/* 1-USTUN: RASM GALEREYASI */}
+                    <div className="space-y-6">
+                        <div className="aspect-[4/5] rounded-[3rem] overflow-hidden bg-gray-100 dark:bg-white/5 relative border dark:border-white/5">
+                            {hasImages ? (
                                 <img
-                                    src={product.images[currentImage]}
+                                    src={images[activeImg]}
                                     alt={product.name}
-                                    className="w-full h-full object-cover transition-all duration-500"
+                                    className="w-full h-full object-cover animate-in fade-in zoom-in duration-700"
                                 />
                             ) : (
-                                <div className="w-full h-full flex items-center justify-center">
-                                    <ShoppingBag size={80} className="text-gray-200 dark:text-white/10" />
+                                <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold uppercase text-[10px]">
+                                    Rasm mavjud emas
                                 </div>
-                            )}
-
-                            {/* LIKE */}
-                            <button
-                                onClick={() => toggleShop(id as string)}
-                                className="absolute top-5 right-5 z-10 w-12 h-12 bg-white/90 dark:bg-black/70 backdrop-blur-md rounded-full flex items-center justify-center shadow-xl hover:scale-110 active:scale-95 transition-all"
-                            >
-                                <Heart
-                                    size={20}
-                                    className={faved ? 'fill-red-500 text-red-500' : 'text-gray-400'}
-                                />
-                            </button>
-
-                            {/* PREV/NEXT */}
-                            {product.images?.length > 1 && (
-                                <>
-                                    <button
-                                        onClick={() => setCurrentImage(i => Math.max(0, i - 1))}
-                                        className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/70 dark:bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-all"
-                                    >
-                                        <ChevronLeft size={22} />
-                                    </button>
-                                    <button
-                                        onClick={() => setCurrentImage(i => Math.min(product.images.length - 1, i + 1))}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/70 dark:bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-all"
-                                    >
-                                        <ChevronRight size={22} />
-                                    </button>
-                                </>
                             )}
                         </div>
 
-                        {/* THUMBNAILS */}
-                        {product.images?.length > 1 && (
-                            <div className="flex gap-3 overflow-x-auto no-scrollbar py-1">
-                                {product.images.map((img: string, i: number) => (
+                        {/* Kichik rasmlar (Thumbnails) */}
+                        {images.length > 1 && (
+                            <div className="flex gap-4 overflow-x-auto no-scrollbar py-2">
+                                {images.map((img: string, i: number) => (
                                     <button
                                         key={i}
-                                        onClick={() => setCurrentImage(i)}
-                                        className={`w-20 h-20 shrink-0 rounded-2xl overflow-hidden border-2 transition-all ${currentImage === i
-                                                ? 'border-brand-gold scale-105'
-                                                : 'border-transparent opacity-60 hover:opacity-100'
-                                            }`}
+                                        onClick={() => setActiveImg(i)}
+                                        className={`w-20 h-24 rounded-2xl overflow-hidden flex-shrink-0 border-2 transition-all duration-300 ${activeImg === i ? 'border-brand-gold scale-105 shadow-lg' : 'border-transparent opacity-40 hover:opacity-100'}`}
                                     >
-                                        <img src={img} className="w-full h-full object-cover" alt="" />
+                                        <img src={img} className="w-full h-full object-cover" />
                                     </button>
                                 ))}
                             </div>
                         )}
                     </div>
 
-                    {/* MA'LUMOTLAR */}
-                    <div className="flex flex-col">
-                        {product.is_new && (
-                            <span className="inline-block bg-brand-gold text-black text-[10px] font-black px-4 py-1.5 rounded-full uppercase mb-4 w-fit italic">
-                                Yangi kolleksiya
-                            </span>
-                        )}
+                    {/* 2-USTUN: MAHSULOT MA'LUMOTLARI */}
+                    <div className="flex flex-col justify-center">
+                        <div className="mb-8">
+                            <div className="flex items-center gap-3 mb-4">
+                                <span className="bg-brand-gold/10 text-brand-gold font-black uppercase tracking-[3px] text-[10px] px-3 py-1 rounded-full">
+                                    {product.main_category || 'Katalog'}
+                                </span>
+                                <span className="text-gray-400 font-bold uppercase tracking-[2px] text-[10px]">
+                                    / {product.category}
+                                </span>
+                            </div>
+                            <h1 className="text-4xl md:text-6xl font-black uppercase italic dark:text-white leading-[0.9] tracking-tighter">
+                                {product.name}
+                            </h1>
+                        </div>
 
-                        <h1 className="text-4xl md:text-5xl font-black dark:text-white uppercase italic tracking-tighter mb-4 leading-none">
-                            {product.name}
-                        </h1>
-
-                        <p className="text-4xl font-black text-brand-gold mb-6 italic">
-                            {formatPrice(product.price)}
-                        </p>
-
-                        {product.description && (
-                            <div className="bg-gray-50 dark:bg-white/5 p-5 rounded-3xl mb-6 border border-gray-100 dark:border-white/5">
-                                <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
-                                    {product.description}
+                        <div className="mb-10">
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-4xl font-black text-brand-gold">
+                                    {Number(product.price).toLocaleString()}
+                                </span>
+                                <span className="text-lg font-black text-brand-gold opacity-60">SOM</span>
+                            </div>
+                            <div className="mt-6 p-6 bg-gray-50 dark:bg-white/5 rounded-[2rem] border dark:border-white/5">
+                                <p className="text-gray-600 dark:text-gray-400 leading-relaxed text-sm">
+                                    {product.description || "Ushbu eksklyuziv mahsulot haqida batafsil ma'lumot olish uchun biz bilan bog'laning."}
                                 </p>
                             </div>
-                        )}
+                        </div>
 
-                        {/* RAZMERLAR */}
-                        {product.sizes?.length > 0 && (
-                            <div className="mb-6">
-                                <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">
-                                    Razmer tanlang
-                                    {selectedSize && <span className="text-brand-gold ml-2">— {selectedSize}</span>}
-                                </p>
-                                <div className="flex gap-2 flex-wrap">
+                        {/* O'LCHAMLAR */}
+                        {product.sizes && product.sizes.length > 0 && (
+                            <div className="mb-10">
+                                <p className="text-[10px] font-black uppercase tracking-[3px] mb-5 dark:text-white/40">O'lchamni tanlang</p>
+                                <div className="flex flex-wrap gap-3">
                                     {product.sizes.map((size: string) => (
                                         <button
                                             key={size}
                                             onClick={() => setSelectedSize(size)}
-                                            className={`min-w-[52px] h-12 rounded-2xl font-black text-sm transition-all border-2 ${selectedSize === size
-                                                    ? 'bg-brand-gold border-brand-gold text-black scale-110 shadow-lg shadow-brand-gold/30'
-                                                    : 'bg-transparent dark:text-white border-gray-200 dark:border-white/10 hover:border-brand-gold'
+                                            className={`min-w-[60px] h-[60px] px-4 rounded-2xl font-black text-sm transition-all duration-300 flex items-center justify-center border-2 ${selectedSize === size
+                                                    ? 'bg-brand-gold border-brand-gold text-black scale-110 shadow-lg shadow-brand-gold/20'
+                                                    : 'border-gray-100 dark:border-white/10 dark:text-white hover:border-brand-gold/50'
                                                 }`}
                                         >
                                             {size}
@@ -217,67 +116,26 @@ export default function ProductDetailPage() {
                             </div>
                         )}
 
-                        {/* RANGLAR */}
-                        {product.colors?.length > 0 && (
-                            <div className="mb-8">
-                                <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">
-                                    Rang tanlang
-                                    {selectedColor && <span className="text-brand-gold ml-2">— {selectedColor}</span>}
-                                </p>
-                                <div className="flex gap-2 flex-wrap">
-                                    {product.colors.map((color: string) => (
-                                        <button
-                                            key={color}
-                                            onClick={() => setSelectedColor(color)}
-                                            className={`px-5 py-2.5 rounded-2xl font-black text-sm transition-all border-2 ${selectedColor === color
-                                                    ? 'bg-brand-gold border-brand-gold text-black shadow-lg shadow-brand-gold/30'
-                                                    : 'bg-transparent dark:text-white border-gray-200 dark:border-white/10 hover:border-brand-gold'
-                                                }`}
-                                        >
-                                            {color}
-                                        </button>
-                                    ))}
+                        {/* HARAKATLAR */}
+                        <div className="flex flex-col sm:flex-row gap-4">
+                            <button className="flex-[2] py-6 bg-brand-gold text-black font-black rounded-[1.5rem] uppercase tracking-[3px] flex items-center justify-center gap-4 hover:scale-[1.03] active:scale-95 transition-all shadow-2xl shadow-brand-gold/30">
+                                <ShoppingBag size={22} /> Savatga qo'shish
+                            </button>
+
+                            <div className="flex-1 flex items-center gap-4 px-6 py-4 bg-gray-50 dark:bg-white/5 rounded-[1.5rem] border dark:border-white/5">
+                                <div className="p-2 bg-green-500/10 rounded-full">
+                                    <ShieldCheck className="text-green-500" size={20} />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-black dark:text-white uppercase">Original</span>
+                                    <span className="text-[9px] font-bold text-gray-500 uppercase">Kafolatlangan</span>
                                 </div>
                             </div>
-                        )}
-
-                        {/* OGOHLANTIRISH */}
-                        {((product.sizes?.length > 0 && !selectedSize) || (product.colors?.length > 0 && !selectedColor)) && (
-                            <p className="text-xs text-red-400 mb-4 font-bold">
-                                * {product.sizes?.length > 0 && !selectedSize ? 'Razmer' : 'Rang'} tanlang
-                            </p>
-                        )}
-
-                        {/* TUGMALAR */}
-                        <div className="flex flex-col gap-3 mt-auto">
-                            <button
-                                onClick={handleAddToCart}
-                                disabled={
-                                    (product.sizes?.length > 0 && !selectedSize) ||
-                                    (product.colors?.length > 0 && !selectedColor)
-                                }
-                                className={`h-16 rounded-[1.5rem] font-black text-lg flex items-center justify-center gap-3 transition-all ${added
-                                        ? 'bg-green-500 text-white'
-                                        : 'bg-brand-gold text-black hover:scale-[1.02] active:scale-95 shadow-xl shadow-brand-gold/20 disabled:opacity-30 disabled:scale-100'
-                                    }`}
-                            >
-                                {added ? (
-                                    <><Check size={24} /> Savatga qo'shildi!</>
-                                ) : (
-                                    <><ShoppingBag size={24} /> Savatga qo'shish</>
-                                )}
-                            </button>
-
-                            <button
-                                onClick={handleDirectWhatsApp}
-                                className="h-16 rounded-[1.5rem] font-black text-lg flex items-center justify-center gap-3 bg-[#25D366] text-white hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-green-500/20"
-                            >
-                                <MessageCircle size={24} /> WhatsApp orqali so'rash
-                            </button>
                         </div>
                     </div>
+
                 </div>
             </div>
-        </main>
+        </div>
     );
 }

@@ -1,86 +1,47 @@
 "use client";
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { ShoppingBag, Heart } from 'lucide-react';
-import { useFavorites } from '@/../store/useFavorites';
-
-const formatPrice = (price: number) =>
-    new Intl.NumberFormat('ky-KG').format(price) + ' som';
+import { ShoppingBag, Star } from 'lucide-react';
+import Link from 'next/link';
 
 export default function ProductCard({ product }: { product: any }) {
-    const router = useRouter();
-    const [mounted, setMounted] = useState(false);
-    const [imgError, setImgError] = useState(false);
-    const { toggleShop, isShopFaved } = useFavorites();
-
-    useEffect(() => setMounted(true), []);
-    const faved = mounted && isShopFaved(product.id);
-
-    const image = Array.isArray(product.images) && product.images.length > 0
-        ? product.images[0]
-        : null;
-
     return (
-        <div className="group cursor-pointer bg-white dark:bg-white/5 rounded-[2rem] border border-gray-100 dark:border-white/10 hover:border-brand-gold transition-all duration-300">
-            <div className="relative aspect-square">
-                {/* RASM */}
-                <div
-                    onClick={() => router.push(`/shop/${product.id}`)}
-                    className="absolute inset-0 bg-gray-100 dark:bg-white/5 rounded-t-[2rem] overflow-hidden cursor-pointer"
-                >
-                    {image && !imgError ? (
-                        <img
-                            src={image}
-                            alt={product.name}
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                            onError={() => setImgError(true)}
-                        />
-                    ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                            <ShoppingBag size={40} className="text-gray-300 dark:text-white/10" />
-                        </div>
+        <Link href={`/product/${product.id}`} className="group">
+            <div className="relative aspect-[4/5] rounded-[2rem] overflow-hidden bg-gray-100 dark:bg-white/5 mb-4 shadow-sm group-hover:shadow-xl transition-all duration-500">
+                {product.images?.[0] ? (
+                    <img
+                        src={product.images[0]}
+                        alt={product.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700"
+                    />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400">Rasm yo'q</div>
+                )}
+
+                {/* Badge: Yangi yoki Kategoriya */}
+                <div className="absolute top-4 left-4 flex flex-col gap-2">
+                    {product.is_new && (
+                        <span className="bg-brand-gold text-black text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-tighter shadow-lg">NEW</span>
                     )}
+                    <span className="bg-white/80 dark:bg-black/50 backdrop-blur-md text-[9px] font-bold px-3 py-1 rounded-full uppercase tracking-widest dark:text-white">
+                        {product.category}
+                    </span>
                 </div>
 
-                {/* LIKE */}
-                <button
-                    onClick={e => { e.stopPropagation(); toggleShop(product.id); }}
-                    className="absolute top-3 right-3 z-10 w-9 h-9 bg-white dark:bg-black/70 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all"
-                >
-                    <Heart
-                        size={16}
-                        className={faved ? 'fill-red-500 text-red-500' : 'text-gray-400 dark:text-white/50'}
-                    />
-                </button>
-
-                {/* YANGI BADGE */}
-                {product.is_new && (
-                    <span className="absolute top-3 left-3 z-10 bg-brand-gold text-black text-[9px] font-black px-2 py-0.5 rounded-full uppercase pointer-events-none">
-                        Yangi
-                    </span>
-                )}
+                {/* Tezkor qo'shish tugmasi (Hover bo'lganda chiqadi) */}
+                <div className="absolute inset-x-4 bottom-4 translate-y-12 group-hover:translate-y-0 transition-all duration-500">
+                    <button className="w-full py-3 bg-white dark:bg-black dark:text-white text-black rounded-xl font-black text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-2">
+                        <ShoppingBag size={14} /> Ko'rish
+                    </button>
+                </div>
             </div>
 
-            <div onClick={() => router.push(`/shop/${product.id}`)} className="p-4 cursor-pointer">
-                <h3 className="font-black text-sm dark:text-white uppercase truncate mb-1 group-hover:text-brand-gold transition-colors">
+            <div className="px-2">
+                <h3 className="font-black text-sm uppercase italic dark:text-white truncate tracking-tighter mb-1">
                     {product.name}
                 </h3>
-                <p className="text-brand-gold font-black text-base">
-                    {formatPrice(product.price)}
+                <p className="text-brand-gold font-black text-lg">
+                    {Number(product.price).toLocaleString()} <span className="text-[10px] ml-1">SOM</span>
                 </p>
-                {product.sizes?.length > 0 && (
-                    <div className="flex gap-1 mt-2 flex-wrap">
-                        {product.sizes.slice(0, 4).map((s: string) => (
-                            <span key={s} className="text-[9px] bg-gray-100 dark:bg-white/10 dark:text-gray-400 px-1.5 py-0.5 rounded-md font-bold">
-                                {s}
-                            </span>
-                        ))}
-                        {product.sizes.length > 4 && (
-                            <span className="text-[9px] text-gray-400 font-bold">+{product.sizes.length - 4}</span>
-                        )}
-                    </div>
-                )}
             </div>
-        </div>
+        </Link>
     );
 }
