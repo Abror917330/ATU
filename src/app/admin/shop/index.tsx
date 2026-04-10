@@ -104,14 +104,11 @@ export default function AdminShop() {
     return (
         <div className="space-y-8">
             <ProductForm
-                editingId={editingId}
-                form={form}
-                setForm={setForm}
-                customCategories={customCategories}
-                setCustomCategories={setCustomCategories}
-                onSubmit={handleSubmit}
-                onReset={resetForm}
-                loading={loading}
+                onSuccess={() => {
+                    // Bu yerga mahsulot saqlangandan keyin nima bo'lishi kerakligini yozasiz
+                    // Masalan, ro'yxatni yangilash funksiyasi bo'lsa: fetchProducts();
+                    console.log("Mahsulot muvaffaqiyatli saqlandi!");
+                }}
             />
             <ProductList
                 products={products}

@@ -1,180 +1,149 @@
 "use client";
-import { useState, useEffect } from 'react';
-import { Plus, X, Loader2, Save, Check, Settings2 } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Plus, X, Loader2, Save, Image as ImageIcon, Truck } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { DEFAULT_CATEGORIES, SIZES_CLOTHES, SIZES_SHOES } from '@/lib/constants';
+import Input from '@/components/ui/Input';
 
-// Dastlabki tizim kategoriyalari
-const SYSTEM_MAIN_CATS = [
-    { id: 'clothes', label: 'Kiyimlar', type: 'auto' },
-    { id: 'shoes', label: 'Oyoq kiyimlar', type: 'auto' }
-];
-
-const AUTO_SIZES = {
-    clothes: ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'],
-    shoes: ['38', '39', '40', '41', '42', '43', '44', '45']
-};
-
-export default function ProductForm({ editingId, form, setForm, onSubmit, onReset, loading }: any) {
+export default function ProductForm({ onSuccess }: { onSuccess?: () => void }) {
+    const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
-    const [showNewMainCat, setShowNewMainCat] = useState(false);
-    const [newMainCatInput, setNewMainCatInput] = useState('');
-    const [customMainCats, setCustomMainCats] = useState<any[]>([]);
-    const [tempSubCat, setTempSubCat] = useState('');
+    const [dbCategories, setDbCategories] = useState<any[]>([]);
+    const [isAddingMain, setIsAddingMain] = useState(false);
+    const [isAddingSub, setIsAddingSub] = useState(false);
 
-    // Barcha asosiy kategoriyalar (System + User)
-    const allMainCats = [...SYSTEM_MAIN_CATS, ...customMainCats];
+    const [form, setForm] = useState({
+        name: '', price: '', images: [] as string[],
+        main_category: '', sub_category: '', custom_main: '', custom_sub: '',
+        sizes: [] as string[], delivery_time: '1-2 кун'
+    });
 
-    // Asosiy kategoriya o'zgarganda mantiq
-    const handleMainCatChange = (cat: any) => {
-        let initialSizes: string[] = [];
-        if (cat.id === 'clothes') initialSizes = AUTO_SIZES.clothes;
-        if (cat.id === 'shoes') initialSizes = AUTO_SIZES.shoes;
+    // Bazadan mavjud kategoriyalarni olish (Yangi qo'shilganlar saqlanib qolishi uchun)
+    useEffect(() => {
+        const fetchCats = async () => {
+            const { data } = await supabase.from('products').select('main_category, sub_category');
+            if (data) setDbCategories(data);
+        };
+        fetchCats();
+    }, []);
 
-        setForm({
-            ...form,
-            main_category: cat.id,
-            category: '', // Ichki kategoriya reset
-            sizes: initialSizes
-        });
+    const mergedMainCats = useMemo(() => Array.from(new Set([...Object.keys(DEFAULT_CATEGORIES), ...dbCategories.map(p => p.main_category)])).filter(Boolean), [dbCategories]);
+    const mergedSubCats = useMemo(() => {
+        if (!form.main_category) return [];
+        const dbSubs = dbCategories.filter(p => p.main_category === form.main_category).map(p => p.sub_category);
+        return Array.from(new Set([...(DEFAULT_CATEGORIES[form.main_category] || []), ...dbSubs])).filter(Boolean);
+    }, [form.main_category, dbCategories]);
+
+    const handleMainCatChange = (val: string) => {
+        let autoSizes: string[] = [];
+        if (val.toLowerCase().includes('кийим') && !val.includes('оёқ')) autoSizes = SIZES_CLOTHES;
+        if (val.toLowerCase().includes('оёқ кийим')) autoSizes = SIZES_SHOES;
+        setForm({ ...form, main_category: val, sub_category: '', custom_main: '', sizes: autoSizes });
+        setIsAddingMain(false);
     };
 
-    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = Array.from(e.target.files || []);
-        if (!files.length) return;
+    const handleUpload = async (e: any) => {
         setUploading(true);
-        for (const file of files) {
-            try {
-                const ext = file.name.split('.').pop();
-                const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
-                const { data, error } = await supabase.storage.from('shop-images').upload(`products/${fileName}`, file);
-                if (data) {
-                    const { data: urlData } = supabase.storage.from('shop-images').getPublicUrl(data.path);
-                    setForm((prev: any) => ({ ...prev, images: [...prev.images, urlData.publicUrl] }));
-                }
-            } catch (err) { console.error(err); }
+        for (const file of e.target.files) {
+            const fileName = `${Date.now()}-${file.name}`;
+            const { data } = await supabase.storage.from('shop-images').upload(fileName, file);
+            if (data) {
+                const { data: url } = supabase.storage.from('shop-images').getPublicUrl(data.path);
+                setForm(p => ({ ...p, images: [...p.images, url.publicUrl] }));
+            }
         }
         setUploading(false);
     };
 
+    const handleSubmit = async () => {
+        if (!form.price) return alert("Нархни киритинг!");
+        setLoading(true);
+
+        const finalMain = form.custom_main || form.main_category || 'универсал';
+        const finalSub = form.custom_sub || form.sub_category || 'бошқалар';
+
+        await supabase.from('products').insert([{
+            name: form.name || finalSub,
+            price: Number(form.price),
+            images: form.images,
+            main_category: finalMain,
+            sub_category: finalSub,
+            sizes: form.sizes,
+            delivery_time: form.delivery_time
+        }]);
+
+        setLoading(false);
+        alert("Сақланди!");
+        if (onSuccess) onSuccess();
+    };
+
     return (
-        <div className="bg-white dark:bg-[#0a0a0a] rounded-[3rem] p-10 border border-gray-100 dark:border-white/5 shadow-2xl">
-            <div className="flex items-center gap-3 mb-8">
-                <Settings2 className="text-brand-gold" />
-                <h2 className="text-2xl font-black dark:text-white uppercase italic tracking-tighter">
-                    {editingId ? "Tahrirlash" : "Yangi Mahsulot Kontentini boshqarish"}
-                </h2>
-            </div>
+        <div className="bg-white dark:bg-[#0a0a0a] p-6 rounded-3xl shadow-xl border dark:border-white/10">
+            <h2 className="text-xl font-black mb-6 uppercase text-brand-gold">Маҳсулот қўшиш</h2>
 
-            <div className="grid lg:grid-cols-2 gap-12">
-                {/* 1-USTUN: MEDIA VA KATEGORIYALAR */}
-                <div className="space-y-8">
-                    {/* ASOSIY KATEGORIYA (Kiyim, Oyoq kiyim, Texnika...) */}
+            <div className="grid md:grid-cols-2 gap-8">
+                {/* KATEGORIYALAR (SHOP UI STYLING) */}
+                <div className="space-y-6">
                     <div>
-                        <p className="text-[10px] font-black text-brand-gold uppercase tracking-[3px] mb-4">1. Asosiy Bo'lim</p>
-                        <div className="flex flex-wrap gap-3">
-                            {allMainCats.map(cat => (
-                                <button
-                                    key={cat.id}
-                                    onClick={() => handleMainCatChange(cat)}
-                                    className={`px-6 py-3 rounded-2xl font-black text-xs uppercase transition-all ${form.main_category === cat.id ? 'bg-brand-gold text-black scale-105 shadow-lg' : 'bg-gray-100 dark:bg-white/5 dark:text-white hover:bg-gray-200'}`}
-                                >
-                                    {cat.label}
+                        <label className="text-[10px] font-black uppercase text-gray-500 mb-2 block tracking-widest">1. Асосий бўлим (🔴)</label>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                            {mergedMainCats.map(c => (
+                                <button key={c} onClick={() => handleMainCatChange(c)} className={`px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all ${form.main_category === c ? 'bg-black dark:bg-white text-white dark:text-black' : 'bg-gray-100 dark:bg-white/10 text-gray-500'}`}>
+                                    {c}
                                 </button>
                             ))}
-                            {showNewMainCat ? (
-                                <div className="flex gap-2">
-                                    <input
-                                        autoFocus
-                                        value={newMainCatInput}
-                                        onChange={e => setNewMainCatInput(e.target.value)}
-                                        placeholder="Yangi bo'lim..."
-                                        className="bg-brand-gold/10 border border-brand-gold/30 text-xs font-bold p-3 rounded-2xl outline-none dark:text-white"
-                                    />
-                                    <button onClick={() => {
-                                        if (newMainCatInput) {
-                                            setCustomMainCats([...customMainCats, { id: newMainCatInput.toLowerCase(), label: newMainCatInput, type: 'manual' }]);
-                                            setNewMainCatInput('');
-                                            setShowNewMainCat(false);
-                                        }
-                                    }} className="bg-green-500 text-white p-3 rounded-2xl"><Check size={18} /></button>
-                                </div>
-                            ) : (
-                                <button onClick={() => setShowNewMainCat(true)} className="p-3 border-2 border-dashed border-gray-300 dark:border-white/10 rounded-2xl text-gray-400 hover:border-brand-gold transition-all">
-                                    <Plus size={20} />
+                            <button onClick={() => setIsAddingMain(true)} className="px-4 py-2 rounded-xl text-xs font-bold uppercase bg-brand-gold/20 text-brand-gold">+ Янги</button>
+                        </div>
+                        {isAddingMain && <Input autoFocus placeholder="Янги бўлим номи..." onChange={e => setForm({ ...form, custom_main: e.target.value })} />}
+                    </div>
+
+                    <div>
+                        <label className="text-[10px] font-black uppercase text-gray-500 mb-2 block tracking-widest">2. Ички бўлим (🟡)</label>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                            {mergedSubCats.map(c => (
+                                <button key={c} onClick={() => { setForm({ ...form, sub_category: c }); setIsAddingSub(false); }} className={`px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all ${form.sub_category === c ? 'bg-black dark:bg-white text-white dark:text-black' : 'bg-gray-100 dark:bg-white/10 text-gray-500'}`}>
+                                    {c}
                                 </button>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* ICHKI KATEGORIYA (Futbolka, Shim yoki Zaryadka, Chixol...) */}
-                    <div>
-                        <p className="text-[10px] font-black text-brand-gold uppercase tracking-[3px] mb-4">2. Ichki Kategoriya</p>
-                        <div className="flex gap-2">
-                            <input
-                                value={form.category}
-                                onChange={e => setForm({ ...form, category: e.target.value })}
-                                placeholder="Masalan: Futbolka yoki Chixol..."
-                                className="flex-1 bg-gray-50 dark:bg-white/5 p-4 rounded-2xl font-bold outline-none dark:text-white border border-transparent focus:border-brand-gold/30"
-                            />
-                        </div>
-                    </div>
-
-                    {/* RASMLAR */}
-                    <div>
-                        <p className="text-[10px] font-black text-brand-gold uppercase tracking-[3px] mb-4">3. Rasmlar</p>
-                        <div className="grid grid-cols-4 gap-3">
-                            {form.images.map((img: string, i: number) => (
-                                <div key={i} className="relative aspect-square rounded-3xl overflow-hidden group border border-gray-100 dark:border-white/10">
-                                    <img src={img} className="w-full h-full object-cover" />
-                                    <button onClick={() => setForm({ ...form, images: form.images.filter((_: any, idx: number) => idx !== i) })} className="absolute inset-0 bg-red-600/90 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-all"><X size={20} /></button>
-                                </div>
                             ))}
-                            {form.images.length < 5 && (
-                                <label className="aspect-square rounded-3xl border-2 border-dashed border-gray-200 dark:border-white/10 flex flex-col items-center justify-center cursor-pointer hover:border-brand-gold hover:bg-brand-gold/5 transition-all text-gray-400">
-                                    {uploading ? <Loader2 className="animate-spin text-brand-gold" /> : <><Plus /><span className="text-[9px] font-black mt-1">QO'SHISH</span></>}
-                                    <input type="file" hidden multiple onChange={handleUpload} />
-                                </label>
-                            )}
+                            {form.main_category && <button onClick={() => setIsAddingSub(true)} className="px-4 py-2 rounded-xl text-xs font-bold uppercase bg-brand-gold/20 text-brand-gold">+ Янги</button>}
                         </div>
+                        {isAddingSub && <Input autoFocus placeholder="Янги ички бўлим..." onChange={e => setForm({ ...form, custom_sub: e.target.value })} />}
+                    </div>
+
+                    <div>
+                        <label className="text-[10px] font-black uppercase text-gray-500 mb-2 block tracking-widest">3. Ўлчамлар (🟢 Ихтиёрий)</label>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                            {form.sizes.map(s => (
+                                <span key={s} className="bg-brand-gold text-black px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1">{s} <X size={12} className="cursor-pointer" onClick={() => setForm({ ...form, sizes: form.sizes.filter(x => x !== s) })} /></span>
+                            ))}
+                        </div>
+                        <Input placeholder="Ўлчам ёзиб Enter босинг" onKeyDown={(e: any) => { if (e.key === 'Enter' && e.target.value) { e.preventDefault(); setForm({ ...form, sizes: [...form.sizes, e.target.value] }); e.target.value = ''; } }} />
                     </div>
                 </div>
 
-                {/* 2-USTUN: NARX VA RAZMERLAR */}
-                <div className="space-y-6">
-                    <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Mahsulotning to'liq nomi" className="w-full bg-gray-50 dark:bg-white/5 p-5 rounded-3xl font-black text-lg outline-none dark:text-white border border-transparent focus:border-brand-gold/30" />
+                {/* MA'LUMOTLAR */}
+                <div className="space-y-4">
+                    <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Маҳсулот номи (Мажбурий эмас)" />
+                    <Input type="number" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} placeholder="Нархи (Сўм)*" className="text-brand-gold font-black text-xl" />
+                    <Input icon={<Truck size={18} />} value={form.delivery_time} onChange={e => setForm({ ...form, delivery_time: e.target.value })} placeholder="Етказиб бериш вақти (мас: 1 кун)" />
 
-                    <div className="relative">
-                        <input type="number" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} placeholder="Narxi" className="w-full bg-gray-50 dark:bg-white/5 p-5 rounded-3xl font-black text-2xl outline-none text-brand-gold border border-transparent focus:border-brand-gold/30" />
-                        <span className="absolute right-6 top-1/2 -translate-y-1/2 font-black text-gray-400">SOM</span>
-                    </div>
-
-                    {/* RAZMERLARNI BOSHQARISH */}
-                    <div className="bg-gray-50 dark:bg-white/5 p-6 rounded-[2rem]">
-                        <p className="text-[10px] font-black text-brand-gold uppercase tracking-[3px] mb-4">O'lchamlar / Parametrlar</p>
-                        <div className="flex flex-wrap gap-2 mb-4">
-                            {form.sizes.map((s: string, i: number) => (
-                                <span key={i} className="pl-4 pr-2 py-2 bg-white dark:bg-white/10 dark:text-white rounded-xl text-xs font-black flex items-center gap-3 border dark:border-white/5">
-                                    {s}
-                                    <button onClick={() => setForm({ ...form, sizes: form.sizes.filter((x: string) => x !== s) })} className="hover:text-red-500 p-1"><X size={14} /></button>
-                                </span>
+                    <div>
+                        <div className="flex flex-wrap gap-3 mt-2">
+                            {form.images.map((img, i) => (
+                                <div key={i} className="w-20 h-20 relative rounded-xl overflow-hidden group">
+                                    <img src={img} className="w-full h-full object-cover" />
+                                    <button onClick={() => setForm({ ...form, images: form.images.filter((_, idx) => idx !== i) })} className="absolute inset-0 bg-red-500/80 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all"><X size={20} /></button>
+                                </div>
                             ))}
-                        </div>
-                        <div className="flex gap-2">
-                            <input
-                                value={tempSubCat}
-                                onChange={e => setTempSubCat(e.target.value)}
-                                onKeyDown={e => { if (e.key === 'Enter') { setForm({ ...form, sizes: [...form.sizes, tempSubCat] }); setTempSubCat(''); } }}
-                                placeholder="Yangi parametr qo'shish..."
-                                className="flex-1 bg-white dark:bg-white/10 p-4 rounded-2xl outline-none text-sm dark:text-white"
-                            />
-                            <button onClick={() => { if (tempSubCat) { setForm({ ...form, sizes: [...form.sizes, tempSubCat] }); setTempSubCat('') } }} className="bg-brand-gold px-6 rounded-2xl font-black transition-transform active:scale-90"><Plus size={24} /></button>
+                            <label className="w-20 h-20 border-2 border-dashed border-gray-300 dark:border-white/20 rounded-xl flex items-center justify-center cursor-pointer hover:border-brand-gold">
+                                {uploading ? <Loader2 className="animate-spin text-brand-gold" /> : <ImageIcon className="text-gray-400" />}
+                                <input type="file" multiple hidden onChange={handleUpload} />
+                            </label>
                         </div>
                     </div>
 
-                    <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Mahsulot haqida qisqacha ma'lumot..." rows={3} className="w-full bg-gray-50 dark:bg-white/5 p-5 rounded-3xl outline-none dark:text-white resize-none border border-transparent focus:border-brand-gold/30" />
-
-                    <button onClick={onSubmit} disabled={loading || uploading} className="w-full py-6 bg-brand-gold text-black font-black rounded-3xl uppercase tracking-[2px] shadow-2xl shadow-brand-gold/30 hover:scale-[1.02] active:scale-95 transition-all flex justify-center items-center gap-3">
-                        {loading ? <Loader2 className="animate-spin" /> : <><Save size={22} /> SAQLASH VA JOYLASHTIRISH</>}
+                    <button onClick={handleSubmit} disabled={loading || uploading} className="w-full py-4 bg-brand-gold text-black font-black rounded-xl uppercase tracking-widest flex justify-center gap-2 mt-4 hover:opacity-90">
+                        {loading ? <Loader2 className="animate-spin" /> : <><Save size={20} /> САҚЛАШ</>}
                     </button>
                 </div>
             </div>
