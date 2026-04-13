@@ -12,7 +12,7 @@ export default function ProductCard({ product }: { product: any }) {
                 <span className="text-[9px] font-black uppercase text-brand-gold tracking-wider">{product.sub_category}</span>
                 <h3 className="font-bold text-sm dark:text-white truncate">{product.name || product.sub_category}</h3>
                 <p className="font-black text-lg text-black dark:text-white mt-1">
-                    {Number(product.price).toLocaleString('ru-RU')} <span className="text-[10px] text-gray-400">СЎМ</span>
+                    {Number(product.price).toLocaleString('ru-RU')} <span className="text-[10px] text-gray-400">KG SOM</span>
                 </p>
             </div>
         </Link>

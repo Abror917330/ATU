@@ -3,22 +3,14 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Truck } from 'lucide-react';
 
-// params endi Promise ekanligini bildiramiz
 export default async function ProductDetail({ params }: { params: Promise<{ id: string }> }) {
-    // 1. Params'ni await bilan kutib olamiz
     const resolvedParams = await params;
     const { id } = resolvedParams;
 
-    // 2. Fetch qilishda endi to'g'ridan-to'g'ri tepadagi `id` ni ishlatamiz
-    const { data: product, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', id)
-        .single();
+    const { data: product, error } = await supabase.from('products').select('*').eq('id', id).single();
+    if (error || !product) notFound();
 
-    if (error || !product) {
-        notFound();
-    }
+    const deliveryOptions = product.delivery_options || ['1 кун'];
 
     return (
         <main className="min-h-screen pt-28 pb-20 px-4 sm:px-6 max-w-5xl mx-auto">
@@ -36,21 +28,28 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
                     </div>
 
                     <p className="text-4xl font-black dark:text-white">
-                        {Number(product.price).toLocaleString('ru-RU')} <span className="text-sm text-gray-400">СЎМ</span>
+                        {Number(product.price).toLocaleString('ru-RU')} <span className="text-sm text-gray-400">KG SOM</span>
                     </p>
 
-                    {/* YANGI: Delivery Time */}
-                    <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border dark:border-white/5">
-                        <Truck className="text-brand-gold" size={24} />
-                        <div>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase">Етказиб бериш</p>
-                            <p className="font-bold text-sm dark:text-white">{product.delivery_time || '1-2 кун'}</p>
+                    {/* YETKAZIB BERISH (ARRAY UI) */}
+                    <div className="p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border dark:border-white/5">
+                        <div className="flex items-center gap-2 mb-3">
+                            <Truck className="text-brand-gold" size={20} />
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Етказиб бериш вақти</p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            {deliveryOptions.map((opt: string) => (
+                                <span key={opt} className="px-4 py-2 bg-white dark:bg-[#111] rounded-lg text-xs font-bold dark:text-white shadow-sm border dark:border-white/10">
+                                    {opt}
+                                </span>
+                            ))}
                         </div>
                     </div>
 
+                    {/* O'LCHAMLAR */}
                     {product.sizes && product.sizes.length > 0 && (
                         <div>
-                            <p className="text-xs font-bold uppercase text-gray-500 mb-3">Ўлчамлар (🟢)</p>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Ўлчамлар</p>
                             <div className="flex flex-wrap gap-2">
                                 {product.sizes.map((s: string) => (
                                     <span key={s} className="px-5 py-2.5 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl font-bold text-sm dark:text-white shadow-sm">{s}</span>
