@@ -46,9 +46,8 @@ export default function ProductForm({ editingId, onSuccess }: { editingId?: stri
         if (editingId) fetchProductData(editingId);
     }, [editingId]);
 
-    // O'lchamlarni aniqlash mantiqi - Xatolik tuzatildi (? belgilari qo'shildi)
     useEffect(() => {
-        const main = form.main_category?.toLowerCase() || ""; // Null bo'lsa bo'sh tekst oladi
+        const main = form.main_category?.toLowerCase() || "";
         const sub = form.sub_category?.toLowerCase() || "";
 
         if (main.includes('обув') || sub.includes('обув') || main.includes('пойафзал')) {
@@ -84,7 +83,7 @@ export default function ProductForm({ editingId, onSuccess }: { editingId?: stri
                 sub_category: data.sub_category || '',
                 custom_main: '',
                 custom_sub: '',
-                sizes: Array.isArray(data.sizes) ? data.sizes : [], // Bazadagi eski o'lchamlarni saqlab qoladi
+                sizes: Array.isArray(data.sizes) ? data.sizes : [],
                 delivery_options: data.delivery_options || ['1 кун']
             });
             if (data.main_category) fetchSubCategories(data.main_category);
@@ -133,6 +132,7 @@ export default function ProductForm({ editingId, onSuccess }: { editingId?: stri
             name: form.name,
             price: Number(form.price),
             images: form.images,
+            category: finalMain, // XATOLIKNI TUZATISH: Bazadagi "category" ustuni uchun ma'lumot
             main_category: finalMain,
             sub_category: finalSub,
             sizes: form.sizes,
