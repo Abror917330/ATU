@@ -4,7 +4,7 @@ import { X, Loader2, Save, Image as ImageIcon, Truck, RotateCcw } from 'lucide-r
 import { supabase } from '@/lib/supabase';
 import Input from '@/components/ui/Input';
 
-const DEFAULT_DELIVERIES = ['1 кун', '3 кун', '7 кун', '14 кун'];
+const DEFAULT_DELIVERIES = ['15 кун', '7 кун', '3 кун', '1 кун'];
 
 const PRESET_SIZES: any = {
     clothing: ['S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'],
@@ -36,7 +36,7 @@ export default function ProductForm({ editingId, onSuccess }: { editingId?: stri
         name: '', price: '', images: [] as string[],
         main_category: '', sub_category: '',
         custom_main: '', custom_sub: '',
-        sizes: [] as string[], delivery_options: ['1 кун'] as string[]
+        sizes: [] as string[], delivery_options: ['15 кун'] as string[]
     });
 
     const [suggestedSizes, setSuggestedSizes] = useState<string[]>([]);

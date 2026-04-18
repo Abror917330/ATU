@@ -1,67 +1,40 @@
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Truck } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
+import ProductClient from '@/components/shop/ProductClient';
+
+export const revalidate = 0; // Har doim yangi ma'lumot olish uchun
 
 export default async function ProductDetail({ params }: { params: Promise<{ id: string }> }) {
-    const resolvedParams = await params;
-    const { id } = resolvedParams;
+    const { id } = await params;
 
-    const { data: product, error } = await supabase.from('products').select('*').eq('id', id).single();
-    if (error || !product) notFound();
+    // Supabase'dan mahsulotni olish
+    const { data: product, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-    const deliveryOptions = product.delivery_options || ['1 кун'];
+    // Agar xato bo'lsa yoki mahsulot topilmasa 404 ga otadi
+    if (error || !product) {
+        notFound();
+    }
 
     return (
-        <main className="min-h-screen pt-28 pb-20 px-4 sm:px-6 max-w-5xl mx-auto">
-            <Link href="/shop" className="text-xs font-bold text-gray-500 uppercase mb-6 inline-block hover:text-brand-gold transition-colors">← Орқага</Link>
+        <main className="min-h-screen pt-28 pb-20 bg-white dark:bg-[#0a0a0a]">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6">
+                {/* ORQAGA TUGMASI */}
+                <Link
+                    href="/shop"
+                    className="inline-flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-8 hover:text-brand-gold transition-colors group"
+                >
+                    <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
+                    Орқага қайтиш
+                </Link>
 
-            <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
-                <div className="aspect-[4/5] md:aspect-square bg-gray-100 dark:bg-white/5 rounded-[2rem] overflow-hidden">
-                    <img src={product.images?.[0] || 'https://via.placeholder.com/800'} className="w-full h-full object-cover" />
-                </div>
-
-                <div className="space-y-6">
-                    <div>
-                        <p className="text-[10px] font-black text-brand-gold uppercase tracking-widest mb-3">{product.main_category} / {product.sub_category}</p>
-                        <h1 className="text-3xl sm:text-4xl font-black dark:text-white leading-tight">{product.name || product.sub_category}</h1>
-                    </div>
-
-                    <p className="text-4xl font-black dark:text-white">
-                        {Number(product.price).toLocaleString('ru-RU')} <span className="text-sm text-gray-400">KG SOM</span>
-                    </p>
-
-                    {/* YETKAZIB BERISH (ARRAY UI) */}
-                    <div className="p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border dark:border-white/5">
-                        <div className="flex items-center gap-2 mb-3">
-                            <Truck className="text-brand-gold" size={20} />
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Етказиб бериш вақти</p>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                            {deliveryOptions.map((opt: string) => (
-                                <span key={opt} className="px-4 py-2 bg-white dark:bg-[#111] rounded-lg text-xs font-bold dark:text-white shadow-sm border dark:border-white/10">
-                                    {opt}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* O'LCHAMLAR */}
-                    {product.sizes && product.sizes.length > 0 && (
-                        <div>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Ўлчамлар</p>
-                            <div className="flex flex-wrap gap-2">
-                                {product.sizes.map((s: string) => (
-                                    <span key={s} className="px-5 py-2.5 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl font-bold text-sm dark:text-white shadow-sm">{s}</span>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    <button className="w-full py-5 bg-brand-gold text-black font-black uppercase tracking-widest rounded-2xl hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-brand-gold/20 mt-4">
-                        Харид қилиш
-                    </button>
-                </div>
+                {/* CLIENT KOMPONENTI */}
+                <ProductClient product={product} />
             </div>
         </main>
     );
